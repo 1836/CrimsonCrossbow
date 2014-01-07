@@ -19,6 +19,8 @@ import edu.wpi.first.wpilibj.DriverStationLCD;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Gyro;
 import edu.wpi.first.wpilibj.IterativeRobot;
+import edu.wpi.first.wpilibj.PIDController;
+import edu.wpi.first.wpilibj.PIDSource;
 import edu.wpi.first.wpilibj.Relay;
 import edu.wpi.first.wpilibj.RobotDrive;
 import edu.wpi.first.wpilibj.SafePWM;
@@ -83,6 +85,8 @@ public class Knight extends IterativeRobot {
 	private SolenoidPair caster;
 
 	public Drive drive;
+	private SpeedController leftWheel;
+	private SpeedController rightWheel;
 	private SpeedController shooter;
 	private SpeedController actuator;
 	private SpeedController kicker;
@@ -127,6 +131,8 @@ public class Knight extends IterativeRobot {
 	private DecimalData disp_batteryVoltage;
 	private StringData disp_message;
 
+	PIDController leftWheelPID;
+	PIDController rightWheelPID;
 
 	private void defaultVoltageShooter(boolean on) {
 		voltageShooter(on, 0.65);
@@ -221,8 +227,9 @@ public class Knight extends IterativeRobot {
 		robotConfig.loadFile();
 		//SmartDashboard.putString("hello",robotConfig.get("hello"));
 
-		drive = new Drive(new Talon(robotConfig.getAsInt("tLeftWheel")),
-				new Talon(robotConfig.getAsInt("tRightWheel")));
+		leftWheel = new Talon(robotConfig.getAsInt("tLeftWheel"));
+		rightWheel = new Talon(robotConfig.getAsInt("tRightWheel"));
+		drive = new Drive(leftWheel,rightWheel);
 
 		shooter = new Talon(robotConfig.getAsInt("tShooter"));
 		actuator = new Talon(robotConfig.getAsInt("tActuator"));
@@ -260,8 +267,22 @@ public class Knight extends IterativeRobot {
 		kickerEnc.start();
 		shooterEnc.start();
 
-		leftEnc.start();
-		rightEnc.start();
+		leftEnc.setPIDSourceParameter(PIDSource.PIDSourceParameter.kDistance);
+		rightEnc.setPIDSourceParameter(PIDSource.PIDSourceParameter.kDistance);
+
+		leftWheelPID = new PIDController(
+				robotConfig.getAsDouble("l_kp"),
+				robotConfig.getAsDouble("l_ki"),
+				robotConfig.getAsDouble("l_kd"),
+				robotConfig.getAsDouble("l_kf"),
+				leftEnc, leftWheel);
+
+		rightWheelPID = new PIDController(
+				robotConfig.getAsDouble("r_kp"),
+				robotConfig.getAsDouble("r_ki"),
+				robotConfig.getAsDouble("r_kd"),
+				robotConfig.getAsDouble("r_kf"),
+				rightEnc, rightWheel);
 
 		SmartDashboard.putData(Scheduler.getInstance());
 
@@ -284,14 +305,24 @@ public class Knight extends IterativeRobot {
 		autonStart = Timer.getFPGATimestamp();
 		leftEnc.reset();
 		rightEnc.reset();
+
+		leftWheelPID.setSetpoint(12);
+		rightWheelPID.setSetpoint(12);
+
+		leftWheelPID.enable();
+		rightWheelPID.enable();
+
+		leftEnc.start();
+		rightEnc.start();
+
+		/*
 		autonomousCommand = (Command) autoChooser.getSelected();
 		autonomousCommand.start();
+		*/
 	}
 	/**
 	 * This function is called periodically during autonomous
 	 */
-
-
 	double integral_err;
 	double prev_err;
 	double last_timer;
@@ -308,7 +339,7 @@ public class Knight extends IterativeRobot {
 	public double finishedMovingForward = -1;
 
 	public void autonomousPeriodic() {
-		Scheduler.getInstance().run();
+
 	}
 	public void teleopInit() {
 		//light.set(Relay.Value.kForward);
