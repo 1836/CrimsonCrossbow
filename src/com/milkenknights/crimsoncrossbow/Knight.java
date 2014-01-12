@@ -283,6 +283,9 @@ public class Knight extends IterativeRobot {
 				robotConfig.getAsDouble("r_kd"),
 				robotConfig.getAsDouble("r_kf"),
 				rightEnc, rightWheel);
+		
+		leftWheelPID.startLiveWindowMode();
+		rightWheelPID.startLiveWindowMode();
 
 		SmartDashboard.putData(Scheduler.getInstance());
 
@@ -343,6 +346,8 @@ public class Knight extends IterativeRobot {
 	}
 	public void teleopInit() {
 		//light.set(Relay.Value.kForward);
+		leftEnc.start();
+		rightEnc.start();
 	}
     /**
      * This function is called periodically during operator control
@@ -503,6 +508,14 @@ public class Knight extends IterativeRobot {
 		} else {
 			countMe++;
 		}
+		
+		// pid stuff in the window
+		leftWheelPID.updateTable();
+		
+		SmartDashboard.putData("left wheel pid",leftWheelPID);
+		SmartDashboard.putData("right wheel pid",rightWheelPID);
+		
+		
 
     }
 
@@ -519,6 +532,9 @@ public class Knight extends IterativeRobot {
 		//$wag
 		leftEnc.reset();
 		rightEnc.reset();
+		
+		leftWheelPID.disable();
+		rightWheelPID.disable();
 
 		/*
 		if (DriverStation.getInstance().isFMSAttached()) {
