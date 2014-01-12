@@ -67,6 +67,7 @@ public class Knight extends IterativeRobot {
 
 	JStick xbox; // XBox controller
 	JStick atk; // Logitech ATK3 controller
+	JStick autonStick; // the joystick used for testing PID
 
 	private boolean usingCheesy;
 	DriverStationLCD lcd;
@@ -189,6 +190,8 @@ public class Knight extends IterativeRobot {
 		xbox.setSlow(0.3);
 
 		atk = new JStick(2);
+		
+		autonStick = new JStick(3);
 
 		lcd = DriverStationLCD.getInstance();
 
@@ -309,8 +312,8 @@ public class Knight extends IterativeRobot {
 		leftEnc.reset();
 		rightEnc.reset();
 
-		leftWheelPID.setSetpoint(12);
-		rightWheelPID.setSetpoint(12);
+		leftWheelPID.setSetpoint(100);
+		rightWheelPID.setSetpoint(100);
 
 		leftWheelPID.enable();
 		rightWheelPID.enable();
@@ -342,7 +345,30 @@ public class Knight extends IterativeRobot {
 	public double finishedMovingForward = -1;
 
 	public void autonomousPeriodic() {
+		SmartDashboard.putBoolean("left pid is on",leftWheelPID.isEnable());
+		SmartDashboard.putNumber("left p",leftWheelPID.getP());
+		SmartDashboard.putNumber("left i",leftWheelPID.getI());
+		SmartDashboard.putNumber("left d",leftWheelPID.getD());
+		SmartDashboard.putNumber("left f",leftWheelPID.getF());
+		SmartDashboard.putNumber("left setpoint",leftWheelPID.getSetpoint());
+		SmartDashboard.putNumber("left error",leftWheelPID.getError());
+		SmartDashboard.putNumber("Left Distance", leftEnc.getDistance());
+		SmartDashboard.putNumber("Left Distance", leftEnc.getDistance());
+		SmartDashboard.putNumber("Left Raw", leftEnc.getRaw());
 
+
+		SmartDashboard.putBoolean("right pid is on",rightWheelPID.isEnable());
+		SmartDashboard.putNumber("right p",rightWheelPID.getP());
+		SmartDashboard.putNumber("right i",rightWheelPID.getI());
+		SmartDashboard.putNumber("right d",rightWheelPID.getD());
+		SmartDashboard.putNumber("right f",rightWheelPID.getF());
+		SmartDashboard.putNumber("right setpoint",rightWheelPID.getSetpoint());
+		SmartDashboard.putNumber("right error",rightWheelPID.getError());
+		SmartDashboard.putNumber("Right Distance", rightEnc.getDistance());
+		SmartDashboard.putNumber("Right Raw", rightEnc.getRaw());
+		
+		SmartDashboard.putNumber("Right Wheels", rightWheel.get());
+		SmartDashboard.putNumber("Left Wheels", leftWheel.get());
 	}
 	public void teleopInit() {
 		//light.set(Relay.Value.kForward);
@@ -356,7 +382,37 @@ public class Knight extends IterativeRobot {
 
 		xbox.update();
 		atk.update();
-
+		autonStick.update();
+		
+		if (autonStick.isReleased(3)) {
+			leftWheelPID.setSetpoint(24);
+			leftWheelPID.enable();
+		}
+		if (autonStick.isReleased(2)) {
+			leftWheelPID.disable();
+		}
+		if (autonStick.isReleased(4)) {
+			leftWheelPID.setSetpoint(0);
+			leftWheelPID.enable();
+		}
+		if (autonStick.isReleased(5)) {
+			leftWheelPID.setSetpoint(100);
+			leftWheelPID.enable();
+		}
+		if (autonStick.isReleased(1)) {
+			leftWheelPID.disable();
+			leftWheelPID.reset();
+		}
+		
+		
+		SmartDashboard.putBoolean("pid is on",leftWheelPID.isEnable());
+		SmartDashboard.putNumber("left p",leftWheelPID.getP());
+		SmartDashboard.putNumber("left i",leftWheelPID.getI());
+		SmartDashboard.putNumber("left d",leftWheelPID.getD());
+		SmartDashboard.putNumber("left f",leftWheelPID.getF());
+		SmartDashboard.putNumber("left setpoint",leftWheelPID.getSetpoint());
+		SmartDashboard.putNumber("left error",leftWheelPID.getError());
+		
 
 		// Press A to toggle cheesy drive
 		if (xbox.isReleased(JStick.XBOX_A)) {
@@ -490,8 +546,8 @@ public class Knight extends IterativeRobot {
 		SmartDashboard.putNumber("Gyro", gyro.getAngle());
 		//SmartDashboard.putBoolean("Auton check", autonCheck.get());
 
-		SmartDashboard.putNumber("Right Wheels", drive.getRight());
-		SmartDashboard.putNumber("Left Wheels", drive.getLeft());
+		SmartDashboard.putNumber("Right Wheels", rightWheel.get());
+		SmartDashboard.putNumber("Left Wheels", leftWheel.get());
 
 		lcd.updateLCD();
 
