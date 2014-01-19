@@ -20,6 +20,7 @@ import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Gyro;
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.PIDController;
+import edu.wpi.first.wpilibj.PIDOutput;
 import edu.wpi.first.wpilibj.PIDSource;
 import edu.wpi.first.wpilibj.Relay;
 import edu.wpi.first.wpilibj.RobotDrive;
@@ -112,7 +113,9 @@ public class Knight extends IterativeRobot {
 	public Encoder rightEnc;
 
 	private Gyro gyro;
+	private PIDController gyroPID;
 
+	private boolean lightIsOn;
 	private Relay light;
 
 	// Setup auton classes....
@@ -231,7 +234,8 @@ public class Knight extends IterativeRobot {
 		//SmartDashboard.putString("hello",robotConfig.get("hello"));
 
 		leftWheel = new Talon(robotConfig.getAsInt("tLeftWheel"));
-		rightWheel = new Talon(robotConfig.getAsInt("tRightWheel"));
+		rightWheel = new ReversableTalon(robotConfig.getAsInt("tRightWheel"),true);
+		System.out.println("hello hello");
 		drive = new Drive(leftWheel,rightWheel);
 
 		shooter = new Talon(robotConfig.getAsInt("tShooter"));
@@ -259,12 +263,13 @@ public class Knight extends IterativeRobot {
 		rightEnc.setDistancePerPulse(robotConfig.getAsDouble("rightEncPulse"));
 
 		gyro = new Gyro(robotConfig.getAsInt("gyro"));
+		gyro.setPIDSourceParameter(PIDSource.PIDSourceParameter.kAngle);
 
 		light = new Relay(robotConfig.getAsInt("lightRelay"));
 		compressor.start();
 		driveGear.set(true);
 
-		drive.setInvertedMotor(RobotDrive.MotorType.kRearRight, true);
+		drive.setInvertedMotor(RobotDrive.MotorType.kRearRight,true);
 		drive.setInvertedMotor(RobotDrive.MotorType.kRearLeft,true);
 
 		kickerEnc.start();
@@ -286,9 +291,31 @@ public class Knight extends IterativeRobot {
 				robotConfig.getAsDouble("r_kd"),
 				robotConfig.getAsDouble("r_kf"),
 				rightEnc, rightWheel);
+		/*
+		class OppositeTalons implements PIDOutput {
+			private Talon a;
+			private Talon b;
+			
+			public OppositeTalons(Talon a, Talon b) {
+				this.a = a;
+				this.b = b;
+			}
+			public void pidWrite(double output) {
+				a.set(output);
+				b.set(-output);
+			}
+		}
+		*/
+		gyroPID = new PIDController(0.01,0,0,0,gyro,new PIDOutput() {
+			public void pidWrite(double output) {
+				leftWheel.set(output);
+				rightWheel.set(-output);
+			}
+		});
 		
 		leftWheelPID.startLiveWindowMode();
 		rightWheelPID.startLiveWindowMode();
+		gyroPID.startLiveWindowMode();
 
 		SmartDashboard.putData(Scheduler.getInstance());
 
@@ -387,32 +414,72 @@ public class Knight extends IterativeRobot {
 		if (autonStick.isReleased(3)) {
 			leftWheelPID.setSetpoint(24);
 			leftWheelPID.enable();
+			rightWheelPID.setSetpoint(24);
+			rightWheelPID.enable();
 		}
 		if (autonStick.isReleased(2)) {
 			leftWheelPID.disable();
+			rightWheelPID.disable();
+			gyroPID.disable();
 		}
 		if (autonStick.isReleased(4)) {
 			leftWheelPID.setSetpoint(0);
 			leftWheelPID.enable();
+			rightWheelPID.setSetpoint(0);
+			rightWheelPID.enable();
 		}
 		if (autonStick.isReleased(5)) {
 			leftWheelPID.setSetpoint(100);
 			leftWheelPID.enable();
+			rightWheelPID.setSetpoint(100);
+			rightWheelPID.enable();
 		}
 		if (autonStick.isReleased(1)) {
 			leftWheelPID.disable();
 			leftWheelPID.reset();
+			rightWheelPID.disable();
+			rightWheelPID.reset();
+			gyroPID.disable();
+			gyroPID.reset();
+		}
+		if (autonStick.isReleased(8)) {
+			gyro.reset();
+		}
+		if (autonStick.isReleased(9)) {
+			gyroPID.setSetpoint(0);
+			gyroPID.enable();
 		}
 		
 		
-		SmartDashboard.putBoolean("pid is on",leftWheelPID.isEnable());
+		SmartDashboard.putBoolean("left pid is on",leftWheelPID.isEnable());
 		SmartDashboard.putNumber("left p",leftWheelPID.getP());
 		SmartDashboard.putNumber("left i",leftWheelPID.getI());
 		SmartDashboard.putNumber("left d",leftWheelPID.getD());
 		SmartDashboard.putNumber("left f",leftWheelPID.getF());
 		SmartDashboard.putNumber("left setpoint",leftWheelPID.getSetpoint());
-		SmartDashboard.putNumber("left error",leftWheelPID.getError());
 		
+		SmartDashboard.putBoolean("right pid is on",leftWheelPID.isEnable());
+		SmartDashboard.putNumber("right p",rightWheelPID.getP());
+		SmartDashboard.putNumber("right i",rightWheelPID.getI());
+		SmartDashboard.putNumber("right d",rightWheelPID.getD());
+		SmartDashboard.putNumber("right f",rightWheelPID.getF());
+		SmartDashboard.putNumber("right setpoint",rightWheelPID.getSetpoint());
+		
+		SmartDashboard.putNumber("Right Wheels", rightWheel.get());
+		SmartDashboard.putNumber("Left Wheels", leftWheel.get());
+		
+		// only graph error when PID is on
+		if (leftWheelPID.isEnable()) {
+			SmartDashboard.putNumber("left error",leftWheelPID.getError());
+		}
+		if (rightWheelPID.isEnable()) {
+			SmartDashboard.putNumber("right error",rightWheelPID.getError());
+		}
+		if (gyroPID.isEnable()) {
+			//SmartDashboard.putNumber("gyro error",gyroPID.getError());
+		}
+		SmartDashboard.putNumber("gyro error",gyroPID.getError());
+
 
 		// Press A to toggle cheesy drive
 		if (xbox.isReleased(JStick.XBOX_A)) {
@@ -488,6 +555,16 @@ public class Knight extends IterativeRobot {
 		// toggle the caster
 		if (xbox.isReleased(JStick.XBOX_RB)) {
 			caster.toggle();
+		}
+		
+		// toggle the light
+		if (xbox.isReleased(JStick.XBOX_Y)) {
+			lightIsOn = !lightIsOn;
+			if (lightIsOn) {
+				light.set(Relay.Value.kForward);
+			} else {
+				light.set(Relay.Value.kOff);
+			}
 		}
 
 		//double leftStickX = JStick.removeJitter(xbox.getAxis(JStick.XBOX_LSX), JITTER_RANGE);
@@ -570,7 +647,7 @@ public class Knight extends IterativeRobot {
 		
 		SmartDashboard.putData("left wheel pid",leftWheelPID);
 		SmartDashboard.putData("right wheel pid",rightWheelPID);
-		
+		SmartDashboard.putData("gyro pid",gyroPID);
 		
 
     }

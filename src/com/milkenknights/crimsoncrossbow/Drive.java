@@ -2,6 +2,7 @@ package com.milkenknights.crimsoncrossbow;
 
 import edu.wpi.first.wpilibj.RobotDrive;
 import edu.wpi.first.wpilibj.SpeedController;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class Drive extends RobotDrive {
 	/**
@@ -123,6 +124,11 @@ public class Drive extends RobotDrive {
 		}
 
 		tankDrive(lPower, rPower);
+		
+		SmartDashboard.putNumber("left inverted",m_invertedMotors[RobotDrive.MotorType.kRearLeft.value]);
+		SmartDashboard.putNumber("right inverted",m_invertedMotors[RobotDrive.MotorType.kRearRight.value]);
+		SmartDashboard.putNumber("cheesy left power",lPower);
+		SmartDashboard.putNumber("cheesy right power",rPower);
 		return true;
 	}
 	
