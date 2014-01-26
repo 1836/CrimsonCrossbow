@@ -137,6 +137,8 @@ public class Knight extends IterativeRobot {
 
 	PIDController leftWheelPID;
 	PIDController rightWheelPID;
+	
+	Vision vision;
 
 	private void defaultVoltageShooter(boolean on) {
 		voltageShooter(on, 0.65);
@@ -202,6 +204,8 @@ public class Knight extends IterativeRobot {
 		integral_err = 0;
 		prev_err = 0;
 
+		vision = new Vision();
+		
 		//autonCheck = new DigitalInput(AUTON_CHECK_DI);
 
 		// configure the display to have two lines of text
@@ -448,6 +452,10 @@ public class Knight extends IterativeRobot {
 		if (autonStick.isReleased(9)) {
 			gyroPID.setSetpoint(0);
 			gyroPID.enable();
+		}
+		
+		if (autonStick.isReleased(10)) {
+			SmartDashboard.putNumber("Target found", vision.isHot());
 		}
 		
 		
