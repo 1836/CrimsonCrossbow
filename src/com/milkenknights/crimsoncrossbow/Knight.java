@@ -295,6 +295,9 @@ public class Knight extends IterativeRobot {
 				robotConfig.getAsDouble("r_kd"),
 				robotConfig.getAsDouble("r_kf"),
 				rightEnc, rightWheel);
+		
+		leftWheelPID.setAbsoluteTolerance(2);
+		rightWheelPID.setAbsoluteTolerance(2);
 		/*
 		class OppositeTalons implements PIDOutput {
 			private Talon a;
@@ -316,6 +319,10 @@ public class Knight extends IterativeRobot {
 				rightWheel.set(-output);
 			}
 		});
+		
+		gyroPID.setContinuous();
+		gyroPID.setInputRange(0,360);
+		gyroPID.setAbsoluteTolerance(2);
 		
 		leftWheelPID.startLiveWindowMode();
 		rightWheelPID.startLiveWindowMode();
@@ -484,7 +491,7 @@ public class Knight extends IterativeRobot {
 			SmartDashboard.putNumber("right error",rightWheelPID.getError());
 		}
 		if (gyroPID.isEnable()) {
-			//SmartDashboard.putNumber("gyro error",gyroPID.getError());
+			SmartDashboard.putNumber("gyro error",gyroPID.getError());
 		}
 		SmartDashboard.putNumber("gyro error",gyroPID.getError());
 
@@ -587,17 +594,19 @@ public class Knight extends IterativeRobot {
 		} else {
 			//driveGear.set(normalGear);
 		}
-
-		if (usingCheesy) {
-			drive.cheesyDrive(xbox.getSlowedAxis(JStick.XBOX_LSY)*(slowMode?SLOW_MOD:1), rightStickX,
-					//xbox.isPressed(JStick.XBOX_LJ)
-					// If either trigger is pressed, enable quickturn
-					Math.abs(xbox.getAxis(JStick.XBOX_TRIG)) > 0.5
-					);
-			lcd.println(DriverStationLCD.Line.kUser4,1,"cheesy drive");
-		} else {
-			drive.tankDrive(leftStickY*(slowMode?SLOW_MOD:1), rightStickY*(slowMode?SLOW_MOD:1));
-			lcd.println(DriverStationLCD.Line.kUser4,1,"tank drive   ");
+		
+		if (!(leftWheelPID.isEnable() || rightWheelPID.isEnable() || gyroPID.isEnable())) {
+			if (usingCheesy) {
+				drive.cheesyDrive(xbox.getSlowedAxis(JStick.XBOX_LSY)*(slowMode?SLOW_MOD:1), rightStickX,
+						//xbox.isPressed(JStick.XBOX_LJ)
+						// If either trigger is pressed, enable quickturn
+						Math.abs(xbox.getAxis(JStick.XBOX_TRIG)) > 0.5
+						);
+				lcd.println(DriverStationLCD.Line.kUser4,1,"cheesy drive");
+			} else {
+				drive.tankDrive(leftStickY*(slowMode?SLOW_MOD:1), rightStickY*(slowMode?SLOW_MOD:1));
+				lcd.println(DriverStationLCD.Line.kUser4,1,"tank drive   ");
+			}
 		}
 
 		if (shooterMode == SHOOTER_MODE_VOLTAGE) {
